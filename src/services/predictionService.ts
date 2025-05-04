@@ -1,5 +1,5 @@
 /** @format */
-
+// services/predictionService
 import axios from "axios";
 import { BASE_URL } from "./baseURL";
 

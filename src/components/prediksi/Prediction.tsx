@@ -13,18 +13,30 @@ import {
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
+import PlantModel3D from "./PlantModel3D";
+import { BiCube } from "react-icons/bi";
 
 const Prediction: React.FC = () => {
   const [isCapturing, setIsCapturing] = useState(false);
   const [predictionResult, setPredictionResult] =
     useState<PredictionResult | null>(null);
+  const [previousClassName, setPreviousClassName] = useState<string | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [expandedResults, setExpandedResults] = useState(false);
+  const [show3DModel, setShow3DModel] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasPermission, setHasPermission] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [continuePrediction, setContinuePrediction] = useState(true);
+
+  // Referensi untuk melacak jika model 3D sedang dimuat
+  const isLoadingModel = useRef(false);
+  // Referensi untuk mencegah multiple prediksi overlap
+  const isPredicting = useRef(false);
 
   // Fungsi untuk memulai kamera
   const startCamera = async () => {
@@ -79,6 +91,18 @@ const Prediction: React.FC = () => {
 
   // Fungsi untuk mengambil gambar dari kamera
   const captureImage = async () => {
+    // Jika sedang memprediksi, lewati
+    if (isPredicting.current) {
+      console.log("Prediksi sebelumnya masih berjalan, melewati...");
+      return;
+    }
+
+    // Jika sedang memuat model 3D, lewati
+    if (isLoadingModel.current) {
+      console.log("Sedang memuat model 3D, melewati prediksi...");
+      return;
+    }
+
     if (!videoRef.current || !canvasRef.current) {
       console.error("Video or canvas reference missing");
       return;
@@ -115,12 +139,44 @@ const Prediction: React.FC = () => {
 
   // Proses prediksi
   const processPrediction = async (imageData: string) => {
+    // Set flag sedang memprediksi
+    isPredicting.current = true;
+
     setIsLoading(true);
     setShowResults(true);
 
     try {
       const result = await sendImageForPrediction(imageData);
+
+      // Set hasil prediksi baru
       setPredictionResult(result);
+
+      // Debug logs
+      console.log("=== Prediction Debug ===");
+      console.log("Prediction result:", result);
+      console.log("Previous class:", previousClassName);
+      console.log("Current class:", result.class_name);
+      console.log("Has plant model?", hasPlantModel(result.class_name));
+      console.log("Show 3D model?", show3DModel);
+      console.log("=====================");
+
+      // PERBAIKAN: Logika yang disederhanakan - selalu tampilkan jika memenuhi kriteria
+      if (
+        result.success &&
+        result.confidence > 0.75 &&
+        hasPlantModel(result.class_name)
+      ) {
+        console.log("Menampilkan model 3D untuk:", result.class_name);
+        isLoadingModel.current = true;
+        setShow3DModel(true);
+        setPreviousClassName(result.class_name);
+        setContinuePrediction(false);
+      } else {
+        console.log("Menyembunyikan model 3D");
+        setShow3DModel(false);
+        // Jangan set previousClassName di sini, biarkan null
+        setContinuePrediction(true);
+      }
     } catch (error) {
       console.error("Error during prediction:", error);
       setPredictionResult({
@@ -130,8 +186,15 @@ const Prediction: React.FC = () => {
         confidence: 0,
         error: "Terjadi kesalahan saat melakukan prediksi",
       });
+
+      // Jika error, sembunyikan model 3D
+      setShow3DModel(false);
+      setPreviousClassName(null); // Reset
+      setContinuePrediction(true);
     } finally {
       setIsLoading(false);
+      // Clear flag predicting
+      isPredicting.current = false;
     }
   };
 
@@ -144,8 +207,55 @@ const Prediction: React.FC = () => {
       // Reset results when starting capture
       setPredictionResult(null);
       setShowResults(false);
+      setShow3DModel(false);
+      setPreviousClassName(null);
+      setContinuePrediction(true);
     }
   };
+
+  // Toggle 3D model visibility
+  const toggle3DModel = () => {
+    if (show3DModel) {
+      setShow3DModel(false);
+      setContinuePrediction(true);
+      // PERBAIKAN: Reset previousClassName saat model ditutup manual
+      setPreviousClassName(null);
+    } else if (
+      predictionResult?.success &&
+      hasPlantModel(predictionResult.class_name)
+    ) {
+      console.log(
+        "Manual toggle 3D model ON for:",
+        predictionResult.class_name
+      );
+      isLoadingModel.current = true;
+      setShow3DModel(true);
+      setContinuePrediction(false);
+    }
+  };
+  // Mendengarkan event untuk menutup model 3D
+  useEffect(() => {
+    const handleClose3DModel = () => {
+      console.log("Closing 3D model via event");
+      setShow3DModel(false);
+      setContinuePrediction(true);
+      // PERBAIKAN: Reset previousClassName saat model ditutup
+      setPreviousClassName(null);
+    };
+
+    const handleModelLoaded = () => {
+      console.log("Model 3D selesai dimuat");
+      isLoadingModel.current = false;
+    };
+
+    document.addEventListener("close3dModel", handleClose3DModel);
+    document.addEventListener("model3dLoaded", handleModelLoaded);
+
+    return () => {
+      document.removeEventListener("close3dModel", handleClose3DModel);
+      document.removeEventListener("model3dLoaded", handleModelLoaded);
+    };
+  }, []);
 
   // Capture otomatis setiap 3 detik saat isCapturing true
   useEffect(() => {
@@ -156,29 +266,82 @@ const Prediction: React.FC = () => {
       captureImage();
 
       // Set interval untuk pengambilan otomatis
-      intervalId = setInterval(captureImage, 3000);
+      intervalId = setInterval(() => {
+        // Hanya lanjutkan prediksi jika flag continuePrediction true
+        if (continuePrediction) {
+          captureImage();
+        } else {
+          console.log("Prediksi dihentikan sementara - Model 3D aktif");
+        }
+      }, 3000);
     }
 
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [isCapturing, hasPermission]);
+  }, [isCapturing, hasPermission, continuePrediction]);
 
   // Format confidence sebagai persentase
   const formatConfidence = (confidence: number): string => {
     return `${(confidence * 100).toFixed(1)}%`;
   };
 
+  // Cek apakah hasil prediksi adalah tanaman yang memiliki model 3D
+  const hasPlantModel = (className?: string) => {
+    if (!className) return false;
+
+    const availablePlants = [
+      "Daun Kunyit",
+      "Daun Kemangi",
+      "Daun Pepaya",
+      "Daun Sirih",
+      "Daun Sirsak",
+      "Lidah Buaya",
+    ];
+
+    return availablePlants.includes(className);
+  };
+
+  // Debugging tambahan untuk melihat perubahan state
+  useEffect(() => {
+    console.log("=== State Change ===");
+    console.log("show3DModel:", show3DModel);
+    console.log("previousClassName:", previousClassName);
+    console.log("continuePrediction:", continuePrediction);
+  }, [show3DModel, previousClassName, continuePrediction]);
+
+  // Debug props yang dikirim ke PlantModel3D
+  useEffect(() => {
+    console.log("=== Sending Props to PlantModel3D ===");
+    console.log("show3DModel:", show3DModel);
+    console.log("predictionResult?.success:", predictionResult?.success);
+    console.log("predictionResult?.class_name:", predictionResult?.class_name);
+    console.log(
+      "hasPlantModel:",
+      predictionResult?.class_name && hasPlantModel(predictionResult.class_name)
+    );
+
+    const plantClassToSend =
+      show3DModel &&
+      predictionResult?.success &&
+      hasPlantModel(predictionResult.class_name)
+        ? predictionResult.class_name
+        : null;
+
+    console.log("plantClass to send:", plantClassToSend);
+    console.log("isVisible to send:", show3DModel);
+    console.log("previousClassName:", previousClassName);
+  }, [show3DModel, predictionResult?.class_name, previousClassName]);
+
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
-      {/* Kamera fullscreen */}
+      {/* Kamera fullscreen - SELALU TAMPIL */}
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted
         className="absolute inset-0 w-full h-full object-cover"
-        style={{ display: hasPermission ? "block" : "none" }}
       />
 
       {/* Loading state */}
@@ -206,6 +369,21 @@ const Prediction: React.FC = () => {
         </div>
       )}
 
+      {/* 3D Model - Tanpa background hitam */}
+      <PlantModel3D
+        key={show3DModel ? `model-${predictionResult?.class_name}` : "hidden"}
+        plantClass={
+          show3DModel &&
+          predictionResult?.success &&
+          hasPlantModel(predictionResult.class_name)
+            ? predictionResult.class_name
+            : null
+        }
+        isVisible={show3DModel}
+        currentModelClass={previousClassName}
+        transparent={true}
+      />
+
       {/* Canvas untuk capture (hidden) */}
       <canvas ref={canvasRef} className="hidden" />
 
@@ -214,21 +392,42 @@ const Prediction: React.FC = () => {
         <div
           className={`absolute top-0 left-0 right-0 bg-black bg-opacity-80 transition-all duration-300 ease-in-out ${
             expandedResults ? "max-h-96" : "max-h-32"
-          } overflow-hidden`}
+          } overflow-hidden z-10`}
         >
           <div className="p-4">
             <div className="flex justify-between items-center mb-2">
               <h2 className="text-white font-bold text-xl">Hasil Prediksi</h2>
-              <button
-                onClick={() => setExpandedResults(!expandedResults)}
-                className="text-white"
-              >
-                {expandedResults ? (
-                  <ChevronUp size={20} />
-                ) : (
-                  <ChevronDown size={20} />
-                )}
-              </button>
+              <div className="flex">
+                {predictionResult?.success &&
+                  hasPlantModel(predictionResult.class_name) && (
+                    <button
+                      onClick={toggle3DModel}
+                      className={`mr-2 p-1 rounded ${
+                        show3DModel
+                          ? "bg-blue-600"
+                          : "bg-blue-500 hover:bg-blue-600"
+                      } text-white`}
+                      title={
+                        show3DModel
+                          ? "Sembunyikan Model 3D"
+                          : "Tampilkan Model 3D"
+                      }
+                      disabled={isLoadingModel.current}
+                    >
+                      <BiCube size={20} />
+                    </button>
+                  )}
+                <button
+                  onClick={() => setExpandedResults(!expandedResults)}
+                  className="text-white"
+                >
+                  {expandedResults ? (
+                    <ChevronUp size={20} />
+                  ) : (
+                    <ChevronDown size={20} />
+                  )}
+                </button>
+              </div>
             </div>
 
             {isLoading ? (
@@ -296,7 +495,7 @@ const Prediction: React.FC = () => {
       )}
 
       {/* Tombol kontrol di bagian bawah */}
-      <div className="absolute bottom-8 left-0 right-0 flex justify-center">
+      <div className="absolute bottom-8 left-0 right-0 flex justify-center z-10">
         <button
           onClick={toggleCaptureMode}
           className={`rounded-full p-4 shadow-lg ${
@@ -308,9 +507,15 @@ const Prediction: React.FC = () => {
       </div>
 
       {/* Status label */}
-      <div className="absolute bottom-2 left-0 right-0 text-center">
+      <div className="absolute bottom-2 left-0 right-0 text-center z-10">
         <div className="text-white text-xs bg-black bg-opacity-50 inline-block px-3 py-1 rounded-full">
-          {isCapturing ? "Prediksi otomatis aktif" : "Tap untuk mulai prediksi"}
+          {show3DModel
+            ? "Mode 3D aktif (Prediksi dihentikan)"
+            : isCapturing && continuePrediction
+            ? "Prediksi otomatis aktif"
+            : isCapturing && !continuePrediction
+            ? "Prediksi dihentikan sementara"
+            : "Tap untuk mulai prediksi"}
         </div>
       </div>
     </div>

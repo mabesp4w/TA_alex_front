@@ -3,7 +3,7 @@
 import React from "react";
 import Prediction from "@/components/prediksi/Prediction";
 
-const PrediksiPage: React.FC = () => {
+const DashboardPage: React.FC = () => {
   return (
     <main>
       <Prediction />
@@ -11,4 +11,4 @@ const PrediksiPage: React.FC = () => {
   );
 };
 
-export default PrediksiPage;
+export default DashboardPage;
