@@ -12,10 +12,10 @@ type Props = {
 const layout = ({ children }: Props) => {
   return (
     <SettingContextProvider>
-      <div className="min-h-screen flex flex-col">
+      <div className="h-svh flex flex-col">
         {/* <Navbar /> */}
-        <div className="flex-1">{children}</div>
-        <Footer />
+        <div className="flex h-full w-full border bg-base-200">{children}</div>
+        {/* <Footer /> */}
         {/* <Auth /> */}
       </div>
     </SettingContextProvider>

@@ -1,8 +1,9 @@
 /** @format */
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import * as tf from "@tensorflow/tfjs";
 import { Pause, Play } from "lucide-react";
+import Camera from "./Camera";
 
 interface PredictionResult {
   class: string;
@@ -15,11 +16,6 @@ const LiveClassifier = () => {
   const [isModelLoading, setIsModelLoading] = useState(true);
   const [isPredicting, setIsPredicting] = useState(false);
   const [predictions, setPredictions] = useState<PredictionResult[]>([]);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const predictionIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Default class names if JSON file cannot be loaded
   const DEFAULT_CLASS_NAMES = {
@@ -35,59 +31,27 @@ const LiveClassifier = () => {
   // Load model when component mounts
   useEffect(() => {
     loadModel();
-    initializeCamera();
 
-    // Cleanup on unmount
+    // Turn off prediction when component unmounts
     return () => {
-      if (predictionIntervalRef.current) {
-        clearInterval(predictionIntervalRef.current);
-      }
-      stopCamera();
+      setIsPredicting(false);
     };
   }, []);
 
-  // Initialize camera
-  const initializeCamera = async () => {
-    try {
-      setCameraError(null);
+  // Ensure full screen layout
+  useEffect(() => {
+    // Fix for some mobile browsers: ensure properly sized container
+    document.documentElement.style.height = "100%";
+    document.body.style.height = "100%";
+    document.body.style.overflow = "hidden";
 
-      // Request camera access with environment (back) camera as preferred
-      const constraints: MediaStreamConstraints = {
-        video: {
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      };
-
-      console.log("Requesting camera access...");
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-
-        console.log("Camera initialized successfully");
-      }
-    } catch (err) {
-      console.error("Error accessing camera:", err);
-      setCameraError(
-        "Tidak dapat mengakses kamera. Pastikan Anda telah memberikan izin kamera pada browser."
-      );
-    }
-  };
-
-  // Stop camera
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  };
+    // Cleanup on unmount
+    return () => {
+      document.documentElement.style.height = "";
+      document.body.style.height = "";
+      document.body.style.overflow = "";
+    };
+  }, []);
 
   // Load TensorFlow.js model
   const loadModel = async () => {
@@ -125,72 +89,17 @@ const LiveClassifier = () => {
 
   // Toggle prediction state
   const togglePrediction = () => {
-    if (isPredicting) {
-      // Stop predictions
-      stopPredictions();
-    } else {
-      // Start predictions
-      startPredictions();
-    }
+    setIsPredicting(!isPredicting);
   };
 
-  // Start continuous predictions
-  const startPredictions = () => {
-    if (!model) {
-      alert("Model belum dimuat sepenuhnya. Mohon tunggu.");
-      return;
-    }
+  // Function to handle frames from the Camera component
+  const handleFrame = (canvas: HTMLCanvasElement) => {
+    if (!model) return;
 
-    if (!videoRef.current || !videoRef.current.srcObject) {
-      alert("Kamera tidak tersedia. Silahkan refresh halaman.");
-      return;
-    }
-
-    setIsPredicting(true);
-
-    // Perform initial prediction
-    predictFromVideo();
-
-    // Set up interval for continuous predictions (every 500ms)
-    predictionIntervalRef.current = setInterval(() => {
-      predictFromVideo();
-    }, 500);
-  };
-
-  // Stop predictions
-  const stopPredictions = () => {
-    if (predictionIntervalRef.current) {
-      clearInterval(predictionIntervalRef.current);
-      predictionIntervalRef.current = null;
-    }
-    setIsPredicting(false);
-  };
-
-  // Function to capture and predict from video feed
-  const predictFromVideo = () => {
-    if (!model || !videoRef.current || videoRef.current.readyState !== 4) {
-      return; // Skip if not ready
-    }
-
-    try {
-      // Capture current frame from video
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
-      const video = videoRef.current;
-
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      // Draw current video frame to canvas
-      context?.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      // Process the canvas and get predictions
-      analyzeImage(canvas).then((results) => {
-        setPredictions(results);
-      });
-    } catch (error) {
-      console.error("Error during video prediction:", error);
-    }
+    // Process the canvas and get predictions
+    analyzeImage(canvas).then((results) => {
+      setPredictions(results);
+    });
   };
 
   // Function to process an image and make prediction
@@ -235,95 +144,115 @@ const LiveClassifier = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4 text-center">Plant Classifier</h1>
-
+    <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-black">
       {isModelLoading ? (
-        <div className="flex justify-center items-center h-32">
+        <div className="flex justify-center items-center h-full w-full">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
-          <p className="ml-2">Loading model...</p>
+          <p className="ml-2 text-white">Loading model...</p>
         </div>
       ) : (
-        <div>
-          {cameraError ? (
-            <div className="p-4 bg-red-100 border border-red-300 rounded-lg text-red-700 mb-4">
-              <p>{cameraError}</p>
-              <button
-                onClick={initializeCamera}
-                className="mt-2 bg-red-600 hover:bg-red-700 text-white py-1 px-3 rounded-lg text-sm"
-              >
-                Coba Lagi
-              </button>
+        <div className="relative h-full w-full">
+          {/* Camera component takes the full height and width */}
+          <Camera
+            onFrame={handleFrame}
+            isCapturing={isPredicting}
+            className="w-full h-full"
+          />
+
+          {/* Analyzing indicator */}
+          {isPredicting && (
+            <div className="absolute top-3 right-3 flex items-center z-10">
+              <div className="animate-ping h-3 w-3 rounded-full bg-red-600 opacity-75 mr-2"></div>
+              <span className="text-white bg-black bg-opacity-50 px-2 py-1 rounded-md text-xs">
+                Analyzing...
+              </span>
             </div>
-          ) : (
-            <>
-              <div className="relative overflow-hidden rounded-lg bg-black">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-auto"
-                />
-
-                {isPredicting && (
-                  <div className="absolute top-3 right-3 flex items-center">
-                    <div className="animate-ping h-3 w-3 rounded-full bg-red-600 opacity-75 mr-2"></div>
-                    <span className="text-white bg-black bg-opacity-50 px-2 py-1 rounded-md text-xs">
-                      Analyzing...
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-3">
-                <button
-                  onClick={togglePrediction}
-                  disabled={isModelLoading}
-                  className={`w-full py-3 px-4 rounded-lg text-white flex items-center justify-center ${
-                    isPredicting
-                      ? "bg-red-600 hover:bg-red-700"
-                      : "bg-green-600 hover:bg-green-700"
-                  }`}
-                >
-                  {isPredicting ? (
-                    <>
-                      <Pause size={20} className="mr-2" />
-                      Hentikan Prediksi
-                    </>
-                  ) : (
-                    <>
-                      <Play size={20} className="mr-2" />
-                      Mulai Prediksi
-                    </>
-                  )}
-                </button>
-              </div>
-            </>
           )}
 
-          {predictions.length > 0 && (
-            <div className="mt-4 bg-gray-50 p-4 rounded-lg shadow text-black">
-              <h2 className="text-lg font-semibold mb-3">Hasil Deteksi</h2>
+          {/* Control button - pindahkan lebih ke atas untuk menghindari masalah di mobile */}
+          <div className="absolute bottom-16 md:bottom-10 left-1/2 transform -translate-x-1/2 z-20">
+            <button
+              onClick={togglePrediction}
+              disabled={isModelLoading}
+              className={`py-3 px-6 rounded-lg text-white font-medium shadow-lg flex items-center justify-center ${
+                isPredicting
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-primary hover:bg-primary-focus"
+              }`}
+            >
+              {isPredicting ? (
+                <>
+                  <Pause size={20} className="mr-2" />
+                  Hentikan Prediksi
+                </>
+              ) : (
+                <>
+                  <Play size={20} className="mr-2" />
+                  Mulai Prediksi
+                </>
+              )}
+            </button>
+          </div>
 
-              {predictions.slice(0, 5).map((prediction, index) => {
-                const percentage = (prediction.probability * 100).toFixed(2);
-                return (
-                  <div key={index} className="mb-3">
-                    <div className="flex justify-between mb-1">
-                      <span className="font-medium">{prediction.class}</span>
-                      <span className="text-blue-700">{percentage}%</span>
-                    </div>
-
-                    <div className="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
-                      <div
-                        className="bg-blue-600 h-full rounded-full"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
+          {/* Prediction results */}
+          {predictions.length > 0 && isPredicting && (
+            <div className="absolute top-3 left-3 w-64 md:w-80 bg-white bg-opacity-80 p-4 rounded-lg shadow-lg z-20">
+              {/* Show top result */}
+              {predictions.length > 0 && (
+                <div className="mb-3">
+                  <div className="flex justify-between mb-1">
+                    <span className="font-medium text-black">
+                      {predictions[0].class}
+                    </span>
+                    <span className="text-blue-700 font-medium">
+                      {(predictions[0].probability * 100).toFixed(2)}%
+                    </span>
                   </div>
-                );
-              })}
+
+                  <div className="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
+                    <div
+                      className="bg-blue-600 h-full rounded-full"
+                      style={{
+                        width: `${(predictions[0].probability * 100).toFixed(
+                          2
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Collapse button to show all results */}
+              <div className="collapse collapse-arrow bg-white bg-opacity-70 rounded-lg">
+                <input type="checkbox" className="peer" />
+                <div className="collapse-title font-medium text-center text-sm text-gray-600 py-2">
+                  Lihat Semua Hasil
+                </div>
+                <div className="collapse-content">
+                  {predictions.slice(1, 5).map((prediction, index) => {
+                    const percentage = (prediction.probability * 100).toFixed(
+                      2
+                    );
+                    return (
+                      <div key={index} className="mb-3">
+                        <div className="flex justify-between mb-1">
+                          <span className="font-medium text-black">
+                            {prediction.class}
+                          </span>
+                          <span className="text-blue-700">{percentage}%</span>
+                        </div>
+
+                        <div className="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
+                          <div
+                            className="bg-blue-600 h-full rounded-full"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
         </div>
