@@ -1,27 +1,30 @@
 /** @format */
 
-import type { Metadata } from "next";
 import "./globals.css";
-import DeviceTheme from "@/utils/DeviceTheme";
+import Navbar from "@/components/ui/Navbar";
+import Footer from "@/components/ui/Footer";
 
-export const metadata: Metadata = {
-  title: "Plant Prediction",
-  description: "Website Plant Prediction",
-  authors: {
-    name: "SmartSpartacuS",
-    url: "https://smart.satgar.my.id",
-  },
+export const metadata = {
+  title: "Medicinal Plants Database",
+  description: "Database of medicinal plants with 3D models and information",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
-      <DeviceTheme />
-      <body className={`font-comic-neue text-lg`}>{children}</body>
+    <html lang="id">
+      <body>
+        <div className="min-h-screen flex flex-col">
+          <Navbar />
+          <main className="flex-grow container mx-auto px-4 py-8">
+            {children}
+          </main>
+          <Footer />
+        </div>
+      </body>
     </html>
   );
 }

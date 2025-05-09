@@ -11,6 +11,10 @@
 :root {
   --foreground-rgb: 255, 255, 255;
   --background-rgb: 0, 0, 0;
+  --primary: #00796b;
+  --primary-dark: #004d40;
+  --primary-light: #4db6ac;
+  --accent: #ff5722;
 }
 
 * {
@@ -26,6 +30,24 @@ body {
   overflow: hidden;
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-rgb));
+}
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+
+  h1 {
+    @apply text-3xl md:text-4xl font-bold mb-4;
+  }
+
+  h2 {
+    @apply text-2xl md:text-3xl font-bold mb-3;
+  }
+
+  h3 {
+    @apply text-xl md:text-2xl font-semibold mb-2;
+  }
 }
 
 /* Component specific styles that are hard to replicate with just Tailwind */
@@ -56,5 +78,17 @@ body {
 
   .info-overlay {
     @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/80 text-white p-4 md:p-5 rounded-xl text-left z-50 max-w-[85%] min-w-[280px] shadow-xl animate-fade-in;
+  }
+
+  .btn-primary {
+    @apply bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-md transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md transition-colors;
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:shadow-lg;
   }
 }
