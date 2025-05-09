@@ -170,14 +170,14 @@ const LiveClassifier = () => {
           )}
 
           {/* Control button - pindahkan lebih ke atas untuk menghindari masalah di mobile */}
-          <div className="absolute bottom-16 md:bottom-10 left-1/2 transform -translate-x-1/2 z-20">
+          <div className="absolute bottom-20 md:bottom-10 left-1/2 transform -translate-x-1/2 z-20">
             <button
               onClick={togglePrediction}
               disabled={isModelLoading}
               className={`py-3 px-6 rounded-lg text-white font-medium shadow-lg flex items-center justify-center ${
                 isPredicting
                   ? "bg-red-600 hover:bg-red-700"
-                  : "bg-primary hover:bg-primary-focus"
+                  : "bg-teal-600 hover:bg-teal-700"
               }`}
             >
               {isPredicting ? (

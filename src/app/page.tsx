@@ -1,21 +1,46 @@
 /** @format */
-
+"use client";
 import Link from "next/link";
 import Image from "next/image";
 import SearchBar from "@/components/ui/SearchBar";
 import { Leaf, Grid, FlaskConical, Cuboid } from "lucide-react";
 import { getMedicinalPlants, getPlantCategories, getDiseases } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { Disease, MedicinalPlant, PlantCategory } from "@/lib/types";
 
-export default async function Home() {
-  // Fetch data for homepage
-  const [plants, categories, diseases] = await Promise.all([
-    getMedicinalPlants({ limit: 6 }).catch(() => []),
-    getPlantCategories().catch(() => []),
-    getDiseases({ limit: 6 }).catch(() => []),
-  ]);
+export default function Home() {
+  // const [plants, categories, diseases] = await Promise.all([
+  //   getMedicinalPlants({ limit: 6 }).catch(() => []),
+  //   getPlantCategories().catch(() => []),
+  //   getDiseases({ limit: 6 }).catch(() => []),
+  // ]);
+  const [plants, setPlants] = useState<MedicinalPlant[]>([]);
+  const [categories, setCategories] = useState<PlantCategory[]>([]);
+  const [diseases, setDiseases] = useState<Disease[]>([]);
+
+  useEffect(() => {
+    const fetchPlants = async () => {
+      const plantsData = await getMedicinalPlants({ limit: 6 }).catch(() => []);
+      setPlants(plantsData);
+    };
+
+    const fetchCategories = async () => {
+      const categoriesData = await getPlantCategories().catch(() => []);
+      setCategories(categoriesData);
+    };
+
+    const fetchDiseases = async () => {
+      const diseasesData = await getDiseases({ limit: 6 }).catch(() => []);
+      setDiseases(diseasesData);
+    };
+
+    fetchPlants();
+    fetchCategories();
+    fetchDiseases();
+  }, []);
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 h-full overflow-auto pb-20">
       {/* Hero section */}
       <section className="bg-gradient-to-r from-teal-700 to-teal-500 text-white rounded-xl overflow-hidden shadow-xl">
         <div className="container mx-auto px-6 py-12 md:py-20 flex flex-col md:flex-row items-center">

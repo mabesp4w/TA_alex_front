@@ -3,6 +3,7 @@
 import "./globals.css";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
+import BottomNavigation from "@/components/ui/BottomNavigation";
 
 export const metadata = {
   title: "Medicinal Plants Database",
@@ -17,12 +18,13 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body>
-        <div className="min-h-screen flex flex-col">
+        <div className="h-screen flex flex-col">
           <Navbar />
-          <main className="flex-grow container mx-auto px-4 py-8">
+          <main className="flex-grow container mx-auto px-4 py-8 md:pb-8 pb-24 h-full">
             {children}
           </main>
-          <Footer />
+          <Footer className="hidden md:block" />
+          <BottomNavigation />
         </div>
       </body>
     </html>
