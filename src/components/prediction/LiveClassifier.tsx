@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import * as tf from "@tensorflow/tfjs";
 import { Pause, Play } from "lucide-react";
 import Camera from "./Camera";
+import ResultData from "./ResultData";
 
 interface PredictionResult {
   class: string;
@@ -194,67 +195,7 @@ const LiveClassifier = () => {
             </button>
           </div>
 
-          {/* Prediction results */}
-          {predictions.length > 0 && isPredicting && (
-            <div className="absolute top-3 left-3 w-64 md:w-80 bg-white bg-opacity-80 p-4 rounded-lg shadow-lg z-20">
-              {/* Show top result */}
-              {predictions.length > 0 && (
-                <div className="mb-3">
-                  <div className="flex justify-between mb-1">
-                    <span className="font-medium text-black">
-                      {predictions[0].class}
-                    </span>
-                    <span className="text-blue-700 font-medium">
-                      {(predictions[0].probability * 100).toFixed(2)}%
-                    </span>
-                  </div>
-
-                  <div className="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
-                    <div
-                      className="bg-blue-600 h-full rounded-full"
-                      style={{
-                        width: `${(predictions[0].probability * 100).toFixed(
-                          2
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Collapse button to show all results */}
-              <div className="collapse collapse-arrow bg-white bg-opacity-70 rounded-lg">
-                <input type="checkbox" className="peer" />
-                <div className="collapse-title font-medium text-center text-sm text-gray-600 py-2">
-                  Lihat Semua Hasil
-                </div>
-                <div className="collapse-content">
-                  {predictions.slice(1, 5).map((prediction, index) => {
-                    const percentage = (prediction.probability * 100).toFixed(
-                      2
-                    );
-                    return (
-                      <div key={index} className="mb-3">
-                        <div className="flex justify-between mb-1">
-                          <span className="font-medium text-black">
-                            {prediction.class}
-                          </span>
-                          <span className="text-blue-700">{percentage}%</span>
-                        </div>
-
-                        <div className="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
-                          <div
-                            className="bg-blue-600 h-full rounded-full"
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
+          <ResultData predictions={predictions} isPredicting={isPredicting} />
         </div>
       )}
     </div>
