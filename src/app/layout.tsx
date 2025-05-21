@@ -20,7 +20,7 @@ export default function RootLayout({
       <body>
         <div className="h-screen flex flex-col">
           <Navbar />
-          <main className="flex-grow container mx-auto px-4 py-8 md:pb-8 pb-24 h-full">
+          <main className="flex-grow container mx-auto px-4 py-8">
             {children}
           </main>
           <Footer className="hidden md:block" />

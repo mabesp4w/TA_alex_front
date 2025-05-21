@@ -8,6 +8,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { ArrowLeft, Grid, Leaf } from "lucide-react";
 import { getPlantCategoryById, getMedicinalPlantsByCategory } from "@/lib/api";
 import PlantCard from "@/components/ui/PlantCard";
+import { MedicinalPlant, PlantCategory } from "@/types";
 
 export default function CategoryDetailPage() {
   const router = useRouter();
@@ -15,20 +16,18 @@ export default function CategoryDetailPage() {
   const searchParams = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [category, setCategory] = useState(null);
-  const [plants, setPlants] = useState([]);
-  const [error, setError] = useState(null);
-
-  const sortParam = searchParams.get("sort") || "plant_nm";
-  const pageParam = parseInt(searchParams.get("page") || "1");
-  const perPage = 12;
+  const [category, setCategory] = useState<PlantCategory | null>(null);
+  const [plants, setPlants] = useState<MedicinalPlant[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   // Fungsi untuk membuat URL dengan parameter
-  const createUrl = (newParams) => {
+  const createUrl = (newParams: any) => {
     const categoryId = params.categoryId;
     const urlParams = new URLSearchParams();
 
     // Tambahkan parameter yang ada
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     for (const [key, value] of searchParams.entries()) {
       if (!(key in newParams)) {
         urlParams.append(key, value);
@@ -70,11 +69,6 @@ export default function CategoryDetailPage() {
       } catch (error) {
         console.error("Error fetching category details:", error);
         setError(error.message || "Terjadi kesalahan saat mengambil data");
-
-        // Arahkan ke halaman 404 jika error
-        if (error.message === "Category not found" || error.status === 404) {
-          router.push("/404");
-        }
       } finally {
         setIsLoading(false);
       }
@@ -82,28 +76,6 @@ export default function CategoryDetailPage() {
 
     fetchData();
   }, [params.categoryId, router]);
-
-  // Urutkan tanaman berdasarkan parameter sort
-  const sortedPlants = [...plants].sort((a, b) => {
-    if (sortParam === "plant_nm") {
-      return a.plant_nm.localeCompare(b.plant_nm);
-    } else if (sortParam === "-plant_nm") {
-      return b.plant_nm.localeCompare(a.plant_nm);
-    } else if (sortParam === "-updated_at") {
-      return (
-        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-      );
-    }
-    return 0;
-  });
-
-  // Paginasi
-  const totalPlants = sortedPlants.length;
-  const totalPages = Math.ceil(totalPlants / perPage);
-  const currentPage = Math.min(Math.max(1, pageParam), totalPages || 1);
-  const start = (currentPage - 1) * perPage;
-  const end = start + perPage;
-  const paginatedPlants = sortedPlants.slice(start, end);
 
   if (isLoading) {
     return (
@@ -164,7 +136,7 @@ export default function CategoryDetailPage() {
               <div className="flex items-center">
                 <Leaf className="h-4 w-4 mr-1 text-teal-200" />
                 <span className="text-teal-100">
-                  {totalPlants} tanaman dalam kategori ini
+                  {category.plants?.length} tanaman dalam kategori ini
                 </span>
               </div>
             </div>
@@ -180,50 +152,13 @@ export default function CategoryDetailPage() {
       <div className="bg-white p-4 rounded-lg shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">Tanaman dalam Kategori Ini</h2>
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">Urutkan:</span>
-
-            <Link
-              href={createUrl({ sort: "plant_nm" })}
-              className={`text-xs px-3 py-1.5 rounded-full border ${
-                sortParam === "plant_nm"
-                  ? "bg-teal-600 text-white border-teal-600"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-              }`}
-            >
-              Nama (A-Z)
-            </Link>
-
-            <Link
-              href={createUrl({ sort: "-plant_nm" })}
-              className={`text-xs px-3 py-1.5 rounded-full border ${
-                sortParam === "-plant_nm"
-                  ? "bg-teal-600 text-white border-teal-600"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-              }`}
-            >
-              Nama (Z-A)
-            </Link>
-
-            <Link
-              href={createUrl({ sort: "-updated_at" })}
-              className={`text-xs px-3 py-1.5 rounded-full border ${
-                sortParam === "-updated_at"
-                  ? "bg-teal-600 text-white border-teal-600"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-              }`}
-            >
-              Terbaru
-            </Link>
-          </div>
         </div>
       </div>
 
       {/* Plants grid */}
-      {paginatedPlants.length > 0 ? (
+      {category.plants?.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {paginatedPlants.map((plant) => (
+          {category.plants?.map((plant) => (
             <PlantCard
               key={plant.id}
               id={plant.id}
@@ -254,62 +189,6 @@ export default function CategoryDetailPage() {
           <Link href="/medicinal-plants" className="btn-primary">
             Lihat Semua Tanaman
           </Link>
-        </div>
-      )}
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center mt-8">
-          <div className="flex items-center gap-2">
-            <Link
-              href={createUrl({ page: Math.max(1, currentPage - 1) })}
-              className={`px-3 py-1 rounded-md border ${
-                currentPage <= 1
-                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-              }`}
-              aria-disabled={currentPage <= 1}
-              onClick={(e) => {
-                if (currentPage <= 1) e.preventDefault();
-              }}
-            >
-              Sebelumnya
-            </Link>
-
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pageNum = i + 1;
-              return (
-                <Link
-                  key={i}
-                  href={createUrl({ page: pageNum })}
-                  className={`w-8 h-8 flex items-center justify-center rounded-md ${
-                    pageNum === currentPage
-                      ? "bg-teal-600 text-white"
-                      : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100"
-                  }`}
-                >
-                  {pageNum}
-                </Link>
-              );
-            })}
-
-            {totalPages > 5 && <span className="text-gray-500">...</span>}
-
-            <Link
-              href={createUrl({ page: Math.min(totalPages, currentPage + 1) })}
-              className={`px-3 py-1 rounded-md border ${
-                currentPage >= totalPages
-                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-              }`}
-              aria-disabled={currentPage >= totalPages}
-              onClick={(e) => {
-                if (currentPage >= totalPages) e.preventDefault();
-              }}
-            >
-              Selanjutnya
-            </Link>
-          </div>
         </div>
       )}
     </div>

@@ -35,7 +35,28 @@ const config: Config = {
   },
   plugins: [daisyui],
   daisyui: {
-    themes: ["bumblebee"],
+    themes: [
+      {
+        mytheme: {
+          primary: "#00796b",
+          "primary-focus": "#004d40",
+          "primary-content": "#ffffff",
+          secondary: "#ff5722",
+          "secondary-focus": "#e64a19",
+          "secondary-content": "#ffffff",
+          accent: "#ff5722",
+          "accent-focus": "#e64a19",
+          "accent-content": "#ffffff",
+          neutral: "#000000",
+          "neutral-focus": "#333333",
+          "neutral-content": "#ffffff",
+          "base-100": "#000000",
+          "base-200": "#121212",
+          "base-300": "#1e1e1e",
+          "base-content": "#ffffff",
+        },
+      },
+    ],
   },
 };
 export default config;

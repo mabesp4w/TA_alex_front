@@ -2,11 +2,19 @@
 
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { Loader2 } from "lucide-react";
 
-// Import BasicThreeViewer dengan dynamic import
+// Import BasicThreeViewer dengan dynamic import dan set ssr: false
 const BasicThreeViewer = dynamic(() => import("./BasicThreeViewer"), {
   ssr: false,
-  loading: () => null, // Tidak menampilkan loading indicator
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-black bg-opacity-20">
+      <div className="bg-white p-4 rounded-lg shadow-lg flex items-center">
+        <Loader2 className="animate-spin mr-2" size={24} />
+        <span>Memuat model 3D...</span>
+      </div>
+    </div>
+  ),
 });
 
 interface Plant3DViewerProps {
@@ -16,36 +24,68 @@ interface Plant3DViewerProps {
   onClose: () => void;
 }
 
+// Custom hook untuk mengelola WebGL context sharing
+const useWebGLContextManager = () => {
+  const [isWebGLAvailable, setIsWebGLAvailable] = useState(false);
+
+  // Periksa dukungan WebGL sekali saat komponen mount
+  useEffect(() => {
+    try {
+      const canvas = document.createElement("canvas");
+      const gl =
+        canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+
+      setIsWebGLAvailable(!!gl);
+
+      // Jika ada gl context, hapus untuk mencegah kebocoran
+      if (gl && "getExtension" in gl) {
+        const loseContextExt = gl.getExtension("WEBGL_lose_context");
+        if (loseContextExt) {
+          loseContextExt.loseContext();
+        }
+      }
+    } catch (e) {
+      console.error("Error saat memeriksa dukungan WebGL:", e);
+      setIsWebGLAvailable(false);
+    }
+  }, []);
+
+  return { isWebGLAvailable };
+};
+
 const Plant3DViewer: React.FC<Plant3DViewerProps> = ({
   modelUrl,
   isVisible,
   onClose,
 }) => {
-  const [mounted, setMounted] = useState(false);
-  const [hasError, setHasError] = useState(false);
+  const { isWebGLAvailable } = useWebGLContextManager();
   const [viewerKey, setViewerKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Broadcast event bahwa 3D viewer aktif
+  // Ini akan digunakan untuk pause classifier jika perlu
   useEffect(() => {
-    // Deteksi browser dengan try-catch
-    try {
-      if (typeof window !== "undefined") {
-        // Cek apakah WebGL tersedia
-        const canvas = document.createElement("canvas");
-        const gl =
-          canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    if (isVisible) {
+      // Beri tahu komponen lain bahwa 3D viewer aktif
+      window.dispatchEvent(
+        new CustomEvent("plant3d-viewer-active", { detail: true })
+      );
 
-        if (!gl) {
-          console.error("WebGL tidak didukung oleh browser");
-          setHasError(true);
-        } else {
-          setMounted(true);
-        }
-      }
-    } catch (e) {
-      console.error("Error saat memeriksa dukungan browser:", e);
-      setHasError(true);
+      // Set loading state
+      setIsLoading(true);
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 1500);
+
+      return () => {
+        clearTimeout(timer);
+        // Beri tahu komponen lain bahwa 3D viewer tidak aktif
+        window.dispatchEvent(
+          new CustomEvent("plant3d-viewer-active", { detail: false })
+        );
+      };
     }
-  }, []);
+  }, [isVisible]);
 
   // Reset viewer saat modelUrl berubah
   useEffect(() => {
@@ -64,36 +104,76 @@ const Plant3DViewer: React.FC<Plant3DViewerProps> = ({
 
     if (isVisible) {
       document.addEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "hidden";
     }
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "unset";
     };
   }, [isVisible, onClose]);
 
+  // Jika tidak visible, return null untuk unmount komponen 3D sepenuhnya
   if (!isVisible) return null;
 
-  // Hanya tampilkan viewer saja tanpa UI tambahan
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="w-full h-full relative bg-transparent">
-        {hasError ? null : !modelUrl ? null : mounted ? ( // Tidak menampilkan pesan error // Tidak menampilkan pesan model tidak tersedia
-          <div className="w-full h-full bg-transparent">
-            <BasicThreeViewer
-              key={viewerKey}
-              modelUrl={modelUrl}
-              isFullscreen={true}
-            />
+    <div className="fixed inset-0 z-10">
+      <div className="w-full h-full relative">
+        {!isWebGLAvailable ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white p-4 rounded-lg shadow-lg text-center">
+              <p className="text-red-600 mb-2">
+                Browser Anda tidak mendukung tampilan 3D
+              </p>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
-        ) : null}
+        ) : !modelUrl ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white p-4 rounded-lg shadow-lg text-center">
+              <p className="text-red-600 mb-2">
+                Model 3D tidak tersedia untuk tanaman ini
+              </p>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Loading Indicator */}
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-20">
+                <div className="bg-white p-4 rounded-lg shadow-lg flex items-center text-primary">
+                  <Loader2 className="animate-spin mr-2" size={24} />
+                  <span>Memuat model 3D...</span>
+                </div>
+              </div>
+            )}
 
-        {/* Tombol Close yang minimal, hanya tampil saat hover */}
-        <div className="absolute top-2 right-2 opacity-0 hover:opacity-100 transition-opacity duration-300">
+            {/* 3D Viewer */}
+            <div className="w-full h-full bg-transparent">
+              <BasicThreeViewer
+                key={viewerKey}
+                modelUrl={modelUrl}
+                isFullscreen={true}
+                isActive={true}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Tombol Close */}
+        <div className="absolute top-4 right-4 z-30">
           <button
             onClick={onClose}
-            className="p-1 bg-black bg-opacity-30 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center"
+            className="p-2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white text-sm rounded-full w-8 h-8 flex items-center justify-center transition-opacity duration-300"
             aria-label="Close"
           >
             ✕

@@ -64,9 +64,10 @@ export default function CategoriesPage() {
             Telusuri tanaman obat berdasarkan kategori
           </p>
 
-          <form onSubmit={handleSearch}>
-            <SearchBar placeholder="Cari kategori tanaman..." />
-          </form>
+          <SearchBar
+            placeholder="Cari kategori tanaman..."
+            onSubmit={handleSearch}
+          />
         </div>
       </div>
 

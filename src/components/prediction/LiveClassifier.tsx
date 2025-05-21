@@ -183,7 +183,7 @@ const LiveClassifier = () => {
             >
               {isPredicting ? (
                 <>
-                  <Pause size={20} className="mr-2" />
+                  <Pause size={20} className="mr-2 z-50" />
                   Hentikan Prediksi
                 </>
               ) : (

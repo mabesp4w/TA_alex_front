@@ -8,32 +8,29 @@ import { getMedicinalPlants, getPlantCategories } from "@/lib/api";
 import PlantCard from "@/components/ui/PlantCard";
 import { Leaf, Filter, SortAsc, Search } from "lucide-react";
 import Link from "next/link";
+import { MedicinalPlant, PlantCategory } from "@/types";
 
 export default function MedicinalPlantsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [plants, setPlants] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [plants, setPlants] = useState<MedicinalPlant[]>([]);
+  const [categories, setCategories] = useState<PlantCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Mendapatkan parameter dari URL
   const searchQuery = searchParams.get("search") || "";
   const categoryId = searchParams.get("category") || "";
   const sortParam = searchParams.get("sort") || "plant_nm";
-  const currentPage = parseInt(searchParams.get("page") || "1");
-  const perPage = 12;
-
-  // Total tanaman dan halaman (dalam implementasi nyata, akan didapatkan dari API)
-  const totalPlants = 100;
-  const totalPages = Math.ceil(totalPlants / perPage);
 
   // Fungsi untuk membuat URL dengan parameter
-  const createUrl = (newParams) => {
+  const createUrl = (newParams: any) => {
     const urlParams = new URLSearchParams();
 
     // Tambahkan parameter yang ada
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     for (const [key, value] of searchParams.entries()) {
       if (!(key in newParams)) {
         urlParams.append(key, value);
@@ -54,7 +51,7 @@ export default function MedicinalPlantsPage() {
   };
 
   // Menangani submit form pencarian
-  const handleSearch = (e) => {
+  const handleSearch = (e: any) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const searchQuery = formData.get("search");
@@ -62,7 +59,6 @@ export default function MedicinalPlantsPage() {
     router.push(
       createUrl({
         search: searchQuery || null,
-        page: searchQuery ? "1" : currentPage, // Reset halaman ke 1 saat pencarian baru
       })
     );
   };
@@ -78,8 +74,6 @@ export default function MedicinalPlantsPage() {
           search: searchQuery,
           category: categoryId,
           sort: sortParam,
-          page: currentPage,
-          per_page: perPage,
         };
 
         // Fetch data secara paralel
@@ -88,8 +82,8 @@ export default function MedicinalPlantsPage() {
           getPlantCategories(),
         ]);
 
-        setPlants(plantsData);
-        setCategories(categoriesData);
+        setPlants(plantsData as MedicinalPlant[]);
+        setCategories(categoriesData as PlantCategory[]);
         setError(null);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -100,10 +94,10 @@ export default function MedicinalPlantsPage() {
     };
 
     fetchData();
-  }, [searchQuery, categoryId, sortParam, currentPage, perPage]);
+  }, [searchQuery, categoryId, sortParam]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-20">
       <div className="bg-teal-700 -mx-4 px-4 py-8 md:py-12 md:rounded-xl text-white">
         <div className="container mx-auto">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">
@@ -121,7 +115,7 @@ export default function MedicinalPlantsPage() {
                 name="search"
                 defaultValue={searchQuery}
                 placeholder="Cari tanaman obat berdasarkan nama atau manfaat..."
-                className="w-full px-4 py-3 pl-10 pr-12 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full px-4 py-3 pl-10 pr-12 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-teal-500 text-primary"
               />
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
                 <Search className="h-5 w-5" />
@@ -173,7 +167,7 @@ export default function MedicinalPlantsPage() {
               <div className="w-full md:w-auto">
                 <div className="flex items-center gap-2 mb-2">
                   <Filter className="h-4 w-4" />
-                  <h3 className="font-medium">Filter Kategori</h3>
+                  <h3 className="font-medium text-primary">Filter Kategori</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Link
@@ -187,7 +181,7 @@ export default function MedicinalPlantsPage() {
                     Semua
                   </Link>
 
-                  {categories.slice(0, 10).map((category) => (
+                  {categories.slice(0, 10).map((category: PlantCategory) => (
                     <Link
                       key={category.id}
                       href={createUrl({ category: category.id, page: "1" })}
@@ -216,7 +210,7 @@ export default function MedicinalPlantsPage() {
               <div className="w-full md:w-auto">
                 <div className="flex items-center gap-2 mb-2">
                   <SortAsc className="h-4 w-4" />
-                  <h3 className="font-medium">Urutkan</h3>
+                  <h3 className="font-medium text-primary">Urutkan</h3>
                 </div>
                 <div className="flex gap-2">
                   <Link
@@ -269,7 +263,7 @@ export default function MedicinalPlantsPage() {
           {/* Daftar Tanaman */}
           {plants.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {plants.map((plant) => (
+              {plants.map((plant: any) => (
                 <PlantCard
                   key={plant.id}
                   id={plant.id}
@@ -280,7 +274,7 @@ export default function MedicinalPlantsPage() {
                   updated_at={plant.updated_at}
                   has3dModel={plant.models_3d && plant.models_3d.length > 0}
                   categories={
-                    plant.categories?.map((cat) => ({
+                    plant.categories?.map((cat: any) => ({
                       id: cat.id,
                       category_nm: cat.category_nm,
                     })) || []
@@ -301,64 +295,6 @@ export default function MedicinalPlantsPage() {
               <Link href="/medicinal-plants" className="btn-primary">
                 Lihat Semua Tanaman
               </Link>
-            </div>
-          )}
-
-          {/* Pagination */}
-          {plants.length > 0 && (
-            <div className="flex justify-center mt-8">
-              <div className="flex items-center gap-2">
-                <Link
-                  href={createUrl({ page: Math.max(1, currentPage - 1) })}
-                  className={`px-3 py-1 rounded-md border ${
-                    currentPage <= 1
-                      ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                  }`}
-                  aria-disabled={currentPage <= 1}
-                  onClick={(e) => {
-                    if (currentPage <= 1) e.preventDefault();
-                  }}
-                >
-                  Sebelumnya
-                </Link>
-
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNum = i + 1;
-                  return (
-                    <Link
-                      key={i}
-                      href={createUrl({ page: pageNum })}
-                      className={`w-8 h-8 flex items-center justify-center rounded-md ${
-                        pageNum === currentPage
-                          ? "bg-teal-600 text-white"
-                          : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100"
-                      }`}
-                    >
-                      {pageNum}
-                    </Link>
-                  );
-                })}
-
-                {totalPages > 5 && <span className="text-gray-500">...</span>}
-
-                <Link
-                  href={createUrl({
-                    page: Math.min(totalPages, currentPage + 1),
-                  })}
-                  className={`px-3 py-1 rounded-md border ${
-                    currentPage >= totalPages
-                      ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                  }`}
-                  aria-disabled={currentPage >= totalPages}
-                  onClick={(e) => {
-                    if (currentPage >= totalPages) e.preventDefault();
-                  }}
-                >
-                  Selanjutnya
-                </Link>
-              </div>
             </div>
           )}
         </>

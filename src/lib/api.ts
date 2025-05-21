@@ -28,19 +28,19 @@ export async function fetchApi(endpoint: string, options = {}) {
 export async function getMedicinalPlants(
   params?: any
 ): Promise<MedicinalPlant[]> {
-  return fetchApi("/medicinal-plants/", { params });
+  return fetchApi("/plants/", { params });
 }
 
 export async function getMedicinalPlantById(
   id: number
 ): Promise<MedicinalPlant> {
-  return fetchApi(`/medicinal-plants/${id}/`);
+  return fetchApi(`/plants/${id}/`);
 }
 
 export async function getMedicinalPlantsByCategory(
   categoryId: number
 ): Promise<MedicinalPlant[]> {
-  return fetchApi(`/categories/${categoryId}/plants/`);
+  return fetchApi(`/categories/${categoryId}/`);
 }
 
 export async function getMedicinalPlantsByDisease(

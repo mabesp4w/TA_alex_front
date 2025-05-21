@@ -43,12 +43,7 @@ export default function PlantCard({
     <div className="card group">
       <div className="aspect-w-16 aspect-h-9 relative">
         {image ? (
-          <Image
-            src={`/api/media/${image}`}
-            alt={plant_nm}
-            fill
-            className="object-cover"
-          />
+          <Image src={image} alt={plant_nm} fill className="object-cover" />
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center">
             <Leaf className="h-12 w-12 text-gray-400" />

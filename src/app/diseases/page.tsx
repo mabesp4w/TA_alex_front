@@ -7,24 +7,25 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FlaskConical, Leaf, ArrowRight, Search } from "lucide-react";
 import { getDiseases } from "@/lib/api";
+import { Disease } from "@/types";
 
 export default function DiseasesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [diseases, setDiseases] = useState([]);
+  const [diseases, setDiseases] = useState<Disease[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   const searchQuery = searchParams.get("search") || "";
-  const currentPage = parseInt(searchParams.get("page") || "1");
-  const itemsPerPage = 12;
 
   // Fungsi untuk membuat URL dengan parameter
-  const createUrl = (newParams) => {
+  const createUrl = (newParams: any) => {
     const urlParams = new URLSearchParams();
 
     // Tambahkan parameter yang ada
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     for (const [key, value] of searchParams.entries()) {
       if (!(key in newParams)) {
         urlParams.append(key, value);
@@ -49,7 +50,7 @@ export default function DiseasesPage() {
       try {
         setIsLoading(true);
         const data = await getDiseases();
-        setDiseases(data);
+        setDiseases(data as Disease[]);
         setError(null);
       } catch (error) {
         console.error("Error fetching diseases:", error);
@@ -64,7 +65,7 @@ export default function DiseasesPage() {
   }, []);
 
   // Handle form submission
-  const handleSearch = (e) => {
+  const handleSearch = (e: any) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const searchQuery = formData.get("search");
@@ -72,7 +73,6 @@ export default function DiseasesPage() {
     router.push(
       createUrl({
         search: searchQuery || null,
-        page: searchQuery ? "1" : currentPage, // Reset page to 1 when searching
       })
     );
   };
@@ -94,10 +94,10 @@ export default function DiseasesPage() {
     : diseases;
 
   // Pagination
-  const totalPages = Math.ceil(filteredDiseases.length / itemsPerPage);
-  const validPage = Math.min(Math.max(1, currentPage), totalPages || 1);
-  const start = (validPage - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
+  const totalPages = Math.ceil(filteredDiseases.length);
+  const validPage = Math.min(Math.max(1), totalPages || 1);
+  const start = (validPage - 1) * 10;
+  const end = start + 10;
   const paginatedDiseases = filteredDiseases.slice(start, end);
 
   // Loading state
@@ -240,62 +240,6 @@ export default function DiseasesPage() {
             </Link>
           </div>
         )
-      )}
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center mt-8">
-          <div className="flex items-center gap-2">
-            <Link
-              href={createUrl({ page: Math.max(1, validPage - 1) })}
-              className={`px-3 py-1 rounded-md border ${
-                validPage <= 1
-                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-              }`}
-              aria-disabled={validPage <= 1}
-              onClick={(e) => {
-                if (validPage <= 1) e.preventDefault();
-              }}
-            >
-              Sebelumnya
-            </Link>
-
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pageNum = i + 1;
-              return (
-                <Link
-                  key={i}
-                  href={createUrl({ page: pageNum })}
-                  className={`w-8 h-8 flex items-center justify-center rounded-md ${
-                    pageNum === validPage
-                      ? "bg-red-600 text-white"
-                      : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100"
-                  }`}
-                >
-                  {pageNum}
-                </Link>
-              );
-            })}
-
-            {totalPages > 5 && <span className="text-gray-500">...</span>}
-
-            <Link
-              href={createUrl({ page: Math.min(totalPages, validPage + 1) })}
-              className={`px-3 py-1 rounded-md border ${
-                validPage >= totalPages
-                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-              }`}
-              aria-disabled={validPage >= totalPages}
-              onClick={(e) => {
-                if (validPage >= totalPages) e.preventDefault();
-              }}
-            >
-              Selanjutnya
-            </Link>
-          </div>
-        </div>
       )}
     </div>
   );

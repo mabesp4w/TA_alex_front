@@ -9,11 +9,6 @@ import { useEffect, useState } from "react";
 import { Disease, MedicinalPlant, PlantCategory } from "@/lib/types";
 
 export default function Home() {
-  // const [plants, categories, diseases] = await Promise.all([
-  //   getMedicinalPlants({ limit: 6 }).catch(() => []),
-  //   getPlantCategories().catch(() => []),
-  //   getDiseases({ limit: 6 }).catch(() => []),
-  // ]);
   const [plants, setPlants] = useState<MedicinalPlant[]>([]);
   const [categories, setCategories] = useState<PlantCategory[]>([]);
   const [diseases, setDiseases] = useState<Disease[]>([]);
@@ -26,6 +21,7 @@ export default function Home() {
 
     const fetchCategories = async () => {
       const categoriesData = await getPlantCategories().catch(() => []);
+      console.log({ categoriesData });
       setCategories(categoriesData);
     };
 
@@ -40,11 +36,11 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="space-y-12 h-full overflow-auto pb-20">
+    <div className="space-y-12 h-full pb-20">
       {/* Hero section */}
       <section className="bg-gradient-to-r from-teal-700 to-teal-500 text-white rounded-xl overflow-hidden shadow-xl">
         <div className="container mx-auto px-6 py-12 md:py-20 flex flex-col md:flex-row items-center">
-          <div className="md:w-1/2 mb-8 md:mb-0">
+          <div className="md:w-1/2 ">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               Database Tanaman Obat Indonesia
             </h1>
@@ -67,10 +63,10 @@ export default function Home() {
               </Link>
             </div>
           </div>
-          <div className="md:w-1/2 relative">
+          <div className="hidden md:w-1/2 relative">
             <div className="relative h-64 md:h-80">
               <Image
-                src="/images/hero-plants.jpg"
+                src="/images/bg/2.png"
                 alt="Tanaman Obat Indonesia"
                 fill
                 className="object-cover rounded-lg shadow-lg"
@@ -83,17 +79,19 @@ export default function Home() {
 
       {/* Search Section */}
       <section className="bg-white p-6 rounded-lg shadow-md text-center">
-        <h2 className="text-2xl font-bold mb-6">Cari Tanaman Obat</h2>
+        <h2 className="text-2xl font-bold mb-6 text-primary">
+          Cari Tanaman Obat
+        </h2>
         <SearchBar placeholder="Cari berdasarkan nama tanaman, manfaat, atau kategori..." />
       </section>
 
       {/* Category Section */}
       <section className="bg-gray-50 p-6 rounded-lg">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Kategori Tanaman</h2>
+          <h2 className="text-2xl font-bold text-primary">Kategori Tanaman</h2>
           <Link
             href="/categories"
-            className="text-teal-600 hover:text-teal-800 font-medium"
+            className="text-primary hover:text-primary-focus font-medium"
           >
             Lihat Semua
           </Link>
@@ -107,7 +105,9 @@ export default function Home() {
               className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow flex flex-col items-center text-center"
             >
               <Grid className="h-8 w-8 text-teal-600 mb-2" />
-              <h3 className="font-medium">{category.category_nm}</h3>
+              <h3 className="font-medium text-neutral">
+                {category.category_nm}
+              </h3>
               <p className="text-xs text-gray-500 mt-1">
                 {category.plants?.length || 0} tanaman
               </p>
@@ -119,10 +119,12 @@ export default function Home() {
       {/* Featured Plants */}
       <section className="bg-white p-6 rounded-lg shadow-md">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Tanaman Obat Populer</h2>
+          <h2 className="text-2xl font-bold text-primary">
+            Tanaman Obat Populer
+          </h2>
           <Link
             href="/medicinal-plants"
-            className="text-teal-600 hover:text-teal-800 font-medium"
+            className="text-primary hover:text-primary-focus font-medium"
           >
             Lihat Semua
           </Link>
@@ -138,14 +140,14 @@ export default function Home() {
               <div className="aspect-w-16 aspect-h-9 bg-gray-100 relative">
                 {plant.image ? (
                   <Image
-                    src={`/api/media/${plant.image}`}
+                    src={`${plant.image}`}
                     alt={plant.plant_nm}
                     fill
                     className="object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Leaf className="h-12 w-12 text-gray-300" />
+                    <Leaf className="h-12 w-12 text-primary" />
                   </div>
                 )}
 
@@ -158,7 +160,7 @@ export default function Home() {
               </div>
 
               <div className="p-4">
-                <h3 className="font-bold text-lg text-teal-800 group-hover:text-teal-600 transition-colors">
+                <h3 className="font-bold text-lg text-neutral group-hover:text-teal-600 transition-colors">
                   {plant.plant_nm}
                 </h3>
                 {plant.latin_nm && (
@@ -175,10 +177,10 @@ export default function Home() {
       {/* Common Diseases */}
       <section className="bg-gray-50 p-6 rounded-lg">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Penyakit Umum</h2>
+          <h2 className="text-2xl font-bold text-primary">Penyakit Umum</h2>
           <Link
             href="/diseases"
-            className="text-teal-600 hover:text-teal-800 font-medium"
+            className="text-primary hover:text-primary-focus font-medium"
           >
             Lihat Semua
           </Link>
@@ -193,7 +195,9 @@ export default function Home() {
             >
               <FlaskConical className="h-8 w-8 text-red-500 flex-shrink-0" />
               <div>
-                <h3 className="font-medium">{disease.disease_nm}</h3>
+                <h3 className="font-medium text-neutral">
+                  {disease.disease_nm}
+                </h3>
                 <p className="text-xs text-gray-500">
                   {disease.plants?.length || 0} tanaman obat
                 </p>

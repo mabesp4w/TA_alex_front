@@ -16,6 +16,7 @@ export interface PlantCategory {
   id: number;
   category_nm: string;
   description?: string;
+  plants?: MedicinalPlant[];
 }
 
 export interface PlantPart {
@@ -29,6 +30,7 @@ export interface Disease {
   disease_nm: string;
   description?: string;
   symptoms?: string;
+  plants?: MedicinalPlant[];
 }
 
 export interface PlantCategoryRelation {
