@@ -82,7 +82,10 @@ export default function Home() {
         <h2 className="text-2xl font-bold mb-6 text-primary">
           Cari Tanaman Obat
         </h2>
-        <SearchBar placeholder="Cari berdasarkan nama tanaman, manfaat, atau kategori..." />
+        <SearchBar
+          onSubmit={() => {}}
+          placeholder="Cari berdasarkan nama tanaman, manfaat, atau kategori..."
+        />
       </section>
 
       {/* Category Section */}

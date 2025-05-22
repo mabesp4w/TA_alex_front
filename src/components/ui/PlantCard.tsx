@@ -39,6 +39,8 @@ export default function PlantCard({
       : description
     : "Tidak ada deskripsi.";
 
+  console.log({ plant_nm });
+
   return (
     <div className="card group">
       <div className="aspect-w-16 aspect-h-9 relative">

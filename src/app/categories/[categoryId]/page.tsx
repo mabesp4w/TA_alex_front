@@ -4,71 +4,41 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Grid, Leaf } from "lucide-react";
 import { getPlantCategoryById, getMedicinalPlantsByCategory } from "@/lib/api";
 import PlantCard from "@/components/ui/PlantCard";
-import { MedicinalPlant, PlantCategory } from "@/types";
+import { PlantCategory } from "@/types";
 
 export default function CategoryDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const searchParams = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(true);
   const [category, setCategory] = useState<PlantCategory | null>(null);
-  const [plants, setPlants] = useState<MedicinalPlant[]>([]);
   const [error, setError] = useState<string | null>(null);
-
-  // Fungsi untuk membuat URL dengan parameter
-  const createUrl = (newParams: any) => {
-    const categoryId = params.categoryId;
-    const urlParams = new URLSearchParams();
-
-    // Tambahkan parameter yang ada
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    for (const [key, value] of searchParams.entries()) {
-      if (!(key in newParams)) {
-        urlParams.append(key, value);
-      }
-    }
-
-    // Tambahkan/perbarui parameter baru
-    Object.entries(newParams).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        urlParams.set(key, value.toString());
-      } else {
-        urlParams.delete(key);
-      }
-    });
-
-    const query = urlParams.toString();
-    return `/categories/${categoryId}${query ? `?${query}` : ""}`;
-  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const categoryId = parseInt(params.categoryId);
+        const categoryId = parseInt(params.categoryId as string);
 
         if (isNaN(categoryId)) {
           throw new Error("ID kategori tidak valid");
         }
 
         // Fetch data secara paralel
-        const [categoryData, plantsData] = await Promise.all([
+        const [categoryData] = await Promise.all([
           getPlantCategoryById(categoryId),
           getMedicinalPlantsByCategory(categoryId),
         ]);
 
-        setCategory(categoryData);
-        setPlants(plantsData);
+        setCategory(categoryData as PlantCategory);
         setError(null);
       } catch (error) {
         console.error("Error fetching category details:", error);
-        setError(error.message || "Terjadi kesalahan saat mengambil data");
+        setError((error as string) || "Terjadi kesalahan saat mengambil data");
       } finally {
         setIsLoading(false);
       }
@@ -107,6 +77,8 @@ export default function CategoryDetailPage() {
   }
 
   if (!category) return null;
+
+  console.log({ category });
 
   return (
     <div className="space-y-8">
@@ -147,31 +119,23 @@ export default function CategoryDetailPage() {
           )}
         </div>
       </div>
-
-      {/* Sort options */}
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Tanaman dalam Kategori Ini</h2>
-        </div>
-      </div>
-
       {/* Plants grid */}
-      {category.plants?.length > 0 ? (
+      {category?.plants && category?.plants?.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {category.plants?.map((plant) => (
             <PlantCard
               key={plant.id}
               id={plant.id}
               plant_nm={plant.plant_nm}
-              latin_nm={plant.latin_nm}
-              description={plant.description}
-              image={plant.image}
+              latin_nm={plant.latin_nm || null}
+              description={plant.description || null}
+              image={plant.image || null}
               updated_at={plant.updated_at}
-              has3dModel={plant.models_3d && plant.models_3d.length > 0}
+              has3dModel={false}
               categories={
-                plant.categories?.map((cat) => ({
+                category.plants?.map((cat) => ({
                   id: cat.id,
-                  category_nm: cat.category_nm,
+                  category_nm: category.category_nm,
                 })) || []
               }
             />

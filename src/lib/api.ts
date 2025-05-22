@@ -8,10 +8,10 @@ import {
   Disease,
   Plant3DModel,
 } from "./types";
+import { url_api } from "@/services/baseURL";
 
 // Setup API base URL sesuai environment
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API_BASE_URL = url_api;
 
 // Fungsi fetcher umum untuk API
 export async function fetchApi(endpoint: string, options = {}) {
@@ -46,7 +46,7 @@ export async function getMedicinalPlantsByCategory(
 export async function getMedicinalPlantsByDisease(
   diseaseId: number
 ): Promise<MedicinalPlant[]> {
-  return fetchApi(`/diseases/${diseaseId}/plants/`);
+  return fetchApi(`/diseases/${diseaseId}/`);
 }
 
 // Kategori Tanaman APIs
