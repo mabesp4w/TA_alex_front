@@ -17,6 +17,7 @@ const LiveClassifier = () => {
   const [isModelLoading, setIsModelLoading] = useState(true);
   const [isPredicting, setIsPredicting] = useState(false);
   const [predictions, setPredictions] = useState<PredictionResult[]>([]);
+  const [showPredictions, setShowPredictions] = useState(false);
 
   // Default class names if JSON file cannot be loaded
   const DEFAULT_CLASS_NAMES = {
@@ -92,6 +93,14 @@ const LiveClassifier = () => {
   const togglePrediction = () => {
     setIsPredicting(!isPredicting);
   };
+  // Change show predictions state
+  useEffect(() => {
+    if (isPredicting) {
+      setShowPredictions(true);
+    } else {
+      setShowPredictions(false);
+    }
+  }, [isPredicting]);
 
   // Function to handle frames from the Camera component
   const handleFrame = (canvas: HTMLCanvasElement) => {
@@ -195,7 +204,12 @@ const LiveClassifier = () => {
             </button>
           </div>
 
-          <ResultData predictions={predictions} isPredicting={isPredicting} />
+          <ResultData
+            predictions={predictions}
+            isPredicting={isPredicting}
+            showPredictions={showPredictions}
+            setShowPredictions={setShowPredictions}
+          />
         </div>
       )}
     </div>

@@ -196,7 +196,7 @@ const BasicThreeViewer: React.FC<BasicThreeViewerProps> = ({
             // Set camera position based on model size
             if (cameraRef.current && controlsRef.current) {
               const maxDim = Math.max(size.x, size.y, size.z);
-              const distance = maxDim * 2;
+              const distance = maxDim * 1;
 
               cameraRef.current.position.set(distance, distance / 2, distance);
               cameraRef.current.lookAt(new THREE.Vector3(0, 0, 0));
