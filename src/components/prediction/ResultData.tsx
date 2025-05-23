@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { ChevronDown, ChevronUp, Loader2, Info } from "lucide-react";
 import { PredictionResult } from "@/types";
 import { usePlantStore } from "@/store/plantStore";
+import { BASE_URL } from "@/services/baseURL";
 import Plant3DViewer from "./Plant3DViewer";
 
 interface ResultDataProps {
@@ -95,7 +96,7 @@ const ResultData = ({
     if (plantDetail && manuallyTriggered) {
       const model3dFile = plantDetail.models_3d?.[0]?.model_file;
       if (model3dFile) {
-        setModel3d(model3dFile);
+        setModel3d(`${BASE_URL}${model3dFile}`);
         setShow3DViewer(true);
       } else {
         setModel3d(null);
@@ -272,7 +273,7 @@ const ResultData = ({
       {/* 3D Viewer Modal */}
       <Plant3DViewer
         modelUrl={model3d}
-        plantName={selectedPlantName}
+        plantDetail={plantDetail}
         isVisible={show3DViewer}
         onClose={handleClose3D}
       />

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { Loader2 } from "lucide-react";
+import { PlantDetailResponse } from "@/types";
 
 // Import BasicThreeViewer dengan dynamic import dan set ssr: false
 const BasicThreeViewer = dynamic(() => import("./BasicThreeViewer"), {
@@ -19,7 +20,7 @@ const BasicThreeViewer = dynamic(() => import("./BasicThreeViewer"), {
 
 interface Plant3DViewerProps {
   modelUrl: string | null;
-  plantName: string;
+  plantDetail: PlantDetailResponse | null;
   isVisible: boolean;
   onClose: () => void;
 }
@@ -55,6 +56,7 @@ const useWebGLContextManager = () => {
 
 const Plant3DViewer: React.FC<Plant3DViewerProps> = ({
   modelUrl,
+  plantDetail,
   isVisible,
   onClose,
 }) => {
@@ -158,13 +160,65 @@ const Plant3DViewer: React.FC<Plant3DViewerProps> = ({
             )}
 
             {/* 3D Viewer */}
-            <div className="w-full h-full bg-transparent">
-              <BasicThreeViewer
-                key={viewerKey}
-                modelUrl={modelUrl}
-                isFullscreen={true}
-                isActive={true}
-              />
+            <div className="w-full h-full bg-transparent flex justify-center items-center">
+              <div className="w-1/3 h-full">
+                <BasicThreeViewer
+                  key={viewerKey}
+                  modelUrl={modelUrl}
+                  isFullscreen={false}
+                  isActive={true}
+                />
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg shadow-md p-4 w-2/3 grow">
+                {/* Nama Tanaman */}
+                <h2 className="text-2xl font-semibold text-center text-green-600">
+                  {plantDetail?.plant_nm}
+                </h2>
+
+                {/* Kategori */}
+                <div className="mt-4">
+                  <h3 className="text-lg font-medium text-gray-700">
+                    Kategori:
+                  </h3>
+                  <ul className="list-disc pl-5 text-gray-600">
+                    {plantDetail?.categories.map((category) => (
+                      <li key={category.id}>{category.category_nm}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Bagian Tanaman */}
+                <div className="mt-4">
+                  <h3 className="text-lg font-medium text-gray-700">
+                    Bagian yang Digunakan:
+                  </h3>
+                  <ul className="list-disc pl-5 text-gray-600">
+                    {plantDetail?.plant_parts.map((part) => (
+                      <li key={part.id}>{part.plant_part_nm}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Manfaat */}
+                <div className="mt-4">
+                  <h3 className="text-lg font-medium text-gray-700">
+                    Manfaat:
+                  </h3>
+                  <p className="text-gray-600">{plantDetail?.benefits}</p>
+                </div>
+
+                {/* Penyakit yang Bisa Diatasi */}
+                <div className="mt-4">
+                  <h3 className="text-lg font-medium text-gray-700">
+                    Penyakit yang Bisa Diatasi:
+                  </h3>
+                  <ul className="list-disc pl-5 text-gray-600">
+                    {plantDetail?.diseases.map((disease) => (
+                      <li key={disease.id}>{disease.disease_nm}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
           </>
         )}

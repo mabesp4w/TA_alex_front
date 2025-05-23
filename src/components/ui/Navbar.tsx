@@ -16,7 +16,7 @@ export default function Navbar() {
           {/* Logo and site name */}
           <Link href="/" className="flex items-center space-x-2">
             <Leaf className="h-8 w-8" />
-            <span className="font-bold text-xl">Herba Medica</span>
+            <span className="font-bold text-xl">Tanaman Obat</span>
           </Link>
 
           {/* Desktop navigation */}

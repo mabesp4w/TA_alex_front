@@ -71,6 +71,9 @@ export interface PlantDetailResponse {
   parts: PlantPart[];
   diseases: Disease[];
   models_3d: Plant3DModel[];
+  plant_parts: PlantPart[];
+  plant_nm: string;
+  benefits: string;
 }
 
 // Interface untuk prediction result (sudah ada di code asli)
